@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Heavy Duty Mechanic Shop Manager - Track jobs, parts, and maintenance">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>Mech Shop Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>🔧 Mech Shop Manager</h1>
+            <button id="installBtn" class="install-btn" style="display: none;">Install App</button>
+        </div>
+    </header>
+
+    <nav class="main-nav">
+        <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+        <button class="nav-btn" data-view="jobs">Jobs</button>
+        <button class="nav-btn" data-view="clients">Clients</button>
+        <button class="nav-btn" data-view="equipment">Equipment</button>
+        <button class="nav-btn" data-view="parts">Parts</button>
+        <button class="nav-btn" data-view="crew">Crew</button>
+        <button class="nav-btn" data-view="invoices">Invoices</button>
+    </nav>
+
+    <main id="mainContent">
+        <!-- Dashboard View -->
+        <section id="dashboard" class="view active">
+            <h2>Dashboard</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Active Jobs</h3>
+                    <p class="stat-number" id="activeJobsCount">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Pending Jobs</h3>
+                    <p class="stat-number" id="pendingJobsCount">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Equipment Units</h3>
+                    <p class="stat-number" id="equipmentCount">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Parts in Stock</h3>
+                    <p class="stat-number" id="partsCount">0</p>
+                </div>
+            </div>
+            <div class="recent-activity">
+                <h3>Recent Activity</h3>
+                <ul id="recentActivityList">
+                    <li>No recent activity</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Clients View -->
+        <section id="clients" class="view">
+            <div class="view-header">
+                <h2>Clients</h2>
+                <button class="btn-primary" id="addClientBtn">+ New Client</button>
+            </div>
+            <div class="search-filter">
+                <input type="text" id="clientSearch" placeholder="Search by name, phone, or VIN..." class="search-input">
+            </div>
+            <div id="clientsList" class="items-list"></div>
+        </section>
+
+        <!-- Crew View -->
+        <section id="crew" class="view">
+            <div class="crew-mode-selector">
+                <button class="mode-btn active" data-mode="management">👥 Management</button>
+                <button class="mode-btn" data-mode="timesheet">⏰ Time Tracking</button>
+                <button class="mode-btn" data-mode="login">🔐 Crew Login</button>
+            </div>
+
+            <!-- Crew Management Mode -->
+            <div id="crewManagement" class="crew-mode active">
+                <div class="view-header">
+                    <h2>Crew Members</h2>
+                    <button class="btn-primary" id="addCrewBtn">+ Add Crew Member</button>
+                </div>
+                <div class="search-filter">
+                    <input type="text" id="crewSearch" placeholder="Search crew members..." class="search-input">
+                    <select id="crewStatusFilter" class="filter-select">
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="clocked-in">Clocked In</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div id="crewList" class="items-list"></div>
+            </div>
+
+            <!-- Time Tracking Mode -->
+            <div id="crewTimesheet" class="crew-mode">
+                <div class="view-header">
+                    <h2>Time Tracking</h2>
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <div class="date-filter">
+                            <input type="date" id="timesheetStartDate" class="search-input" style="max-width: 200px;">
+                            <span style="padding: 0 0.5rem;">to</span>
+                            <input type="date" id="timesheetEndDate" class="search-input" style="max-width: 200px;">
+                            <button class="btn-secondary" onclick="app.filterTimesheet()">Filter</button>
+                        </div>
+                        <button class="btn-primary" onclick="app.showInviteCrewModal()" style="margin-left: auto;">📨 Invite Crew Member</button>
+                        <button class="btn-secondary" onclick="app.viewInvitations()">📋 View Invitations</button>
+                    </div>
+                </div>
+                <div id="timesheetList" class="items-list"></div>
+            </div>
+
+            <!-- Crew Login Mode -->
+            <div id="crewLogin" class="crew-mode">
+                <div class="crew-login-container">
+                    <div class="login-card">
+                        <h2>Crew Member Login</h2>
+                        
+                        <!-- Login Method Tabs -->
+                        <div class="login-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #ddd;">
+                            <button class="login-tab-btn active" data-tab="username" onclick="app.switchLoginTab('username')" style="flex: 1; padding: 0.75rem; border: none; background: none; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.3s;">
+                                🔐 Username/Password
+                            </button>
+                            <button class="login-tab-btn" data-tab="quick" onclick="app.switchLoginTab('quick')" style="flex: 1; padding: 0.75rem; border: none; background: none; cursor: pointer; font-weight: 600; color: #666; border-bottom: 3px solid transparent; transition: all 0.3s;">
+                                ⚡ Quick Login (PIN)
+                            </button>
+                        </div>
+                        
+                        <!-- Username/Password Login -->
+                        <div id="usernameLoginForm" class="login-form active">
+                            <div class="form-group">
+                                <label for="crewLoginUsername">Username</label>
+                                <input type="text" id="crewLoginUsername" class="form-control" placeholder="Enter your username" autocomplete="username">
+                            </div>
+                            <div class="form-group">
+                                <label for="crewLoginPassword">Password</label>
+                                <input type="password" id="crewLoginPassword" class="form-control" placeholder="Enter your password" autocomplete="current-password">
+                            </div>
+                            <button class="btn-primary" onclick="app.crewLoginWithCredentials()" style="width: 100%;">Login</button>
+                        </div>
+                        
+                        <!-- Quick PIN Login -->
+                        <div id="quickLoginForm" class="login-form" style="display: none;">
+                            <div class="form-group">
+                                <label for="crewLoginSelect">Select Your Name</label>
+                                <select id="crewLoginSelect" class="form-control">
+                                    <option value="">Select crew member...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="crewLoginPin">PIN Code</label>
+                                <input type="password" id="crewLoginPin" class="form-control" placeholder="Enter your 4-digit PIN" maxlength="4">
+                            </div>
+                            <button class="btn-primary" onclick="app.crewLoginWithPin()" style="width: 100%;">Login</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Crew Dashboard (shown after login) -->
+                <div id="crewDashboard" class="crew-dashboard" style="display: none;">
+                    <div class="crew-header">
+                        <div>
+                            <h2 id="crewWelcome">Welcome, Crew Member</h2>
+                            <p id="crewStatus" class="crew-status-text">Status: Clocked Out</p>
+                        </div>
+                        <button class="btn-secondary" onclick="app.crewLogout()">Logout</button>
+                    </div>
+                    
+                    <div class="crew-actions">
+                        <div class="clock-card">
+                            <div class="current-time" id="currentTime"></div>
+                            <div class="clock-buttons">
+                                <button class="btn-clock-in" id="clockInBtn" onclick="app.clockIn()">🕐 Clock In</button>
+                                <button class="btn-clock-out" id="clockOutBtn" onclick="app.clockOut()" style="display: none;">🕐 Clock Out</button>
+                            </div>
+                        </div>
+                        
+                        <div class="job-selection-card" id="jobSelectionCard" style="display: none;">
+                            <h3>Active Job</h3>
+                            <div class="form-group">
+                                <label for="crewJobSelect">Select Job</label>
+                                <select id="crewJobSelect" class="form-control" onchange="app.changeCrewJob()">
+                                    <option value="">No job selected</option>
+                                </select>
+                            </div>
+                            <div id="currentJobInfo" class="current-job-info"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="crew-time-summary">
+                        <h3>Today's Time Log</h3>
+                        <div id="crewTodayLog" class="time-log-list"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Jobs View -->
+        <section id="jobs" class="view">
+            <div class="view-header">
+                <h2>Work Orders</h2>
+                <button class="btn-primary" id="addJobBtn">+ New Job</button>
+            </div>
+            <div class="search-filter">
+                <input type="text" id="jobSearch" placeholder="Search jobs..." class="search-input">
+                <select id="jobStatusFilter" class="filter-select">
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+            <div id="jobsList" class="items-list"></div>
+        </section>
+
+        <!-- Equipment View -->
+        <section id="equipment" class="view">
+            <div class="view-header">
+                <h2>Equipment</h2>
+                <button class="btn-primary" id="addEquipmentBtn">+ Add Equipment</button>
+            </div>
+            <div class="search-filter">
+                <input type="text" id="equipmentSearch" placeholder="Search equipment..." class="search-input">
+                <select id="equipmentTypeFilter" class="filter-select">
+                    <option value="all">All Types</option>
+                    <option value="excavator">Excavator</option>
+                    <option value="loader">Loader</option>
+                    <option value="dozer">Dozer</option>
+                    <option value="dump-truck">Dump Truck</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div id="equipmentList" class="items-list"></div>
+        </section>
+
+        <!-- Parts View -->
+        <section id="parts" class="view">
+            <div class="view-header">
+                <h2>Parts Inventory</h2>
+                <button class="btn-primary" id="addPartBtn">+ Add Part</button>
+            </div>
+            <div class="search-filter">
+                <input type="text" id="partsSearch" placeholder="Search parts..." class="search-input">
+                <select id="partsStockFilter" class="filter-select">
+                    <option value="all">All Stock Levels</option>
+                    <option value="in-stock">In Stock</option>
+                    <option value="low-stock">Low Stock</option>
+                    <option value="out-of-stock">Out of Stock</option>
+                </select>
+            </div>
+            <div id="partsList" class="items-list"></div>
+        </section>
+
+        <!-- Invoices View -->
+        <section id="invoices" class="view">
+            <div class="view-header">
+                <h2>Invoices</h2>
+                <button class="btn-primary" id="addInvoiceBtn">+ New Invoice</button>
+            </div>
+            <div class="search-filter">
+                <input type="text" id="invoiceSearch" placeholder="Search invoices..." class="search-input">
+                <select id="invoiceStatusFilter" class="filter-select">
+                    <option value="all">All Status</option>
+                    <option value="draft">Draft</option>
+                    <option value="sent">Sent</option>
+                    <option value="paid">Paid</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+            </div>
+            <div id="invoicesList" class="items-list"></div>
+        </section>
+    </main>
+
+    <!-- Modal for Adding/Editing Items -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('Service Worker registered', reg))
+                .catch(err => console.log('Service Worker registration failed', err));
+        }
+    </script>
+</body>
+</html>
