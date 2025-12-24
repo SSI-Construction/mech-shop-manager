@@ -224,6 +224,23 @@ class MechShopApp {
                 return `<li><strong>${date.toLocaleString()}</strong>: ${a.message}</li>`;
             }).join('');
         }
+
+        // Update maintenance alerts
+        const alerts = this.getOverdueMaintenanceAlerts();
+        const alertsContainer = document.getElementById('maintenanceAlerts');
+        if (alertsContainer) {
+            if (alerts.length === 0) {
+                alertsContainer.innerHTML = '<div class="alert-item success">✓ All maintenance up to date</div>';
+            } else {
+                alertsContainer.innerHTML = alerts.slice(0, 5).map(alert => `
+                    <div class="alert-item ${alert.status.includes('OVERDUE') ? 'danger' : 'warning'}">
+                        <div><strong>${alert.client}</strong> - ${alert.vehicle}</div>
+                        <div>${alert.serviceType}: ${alert.status}</div>
+                        <button class="btn-sm" onclick="app.showMaintenanceSchedule(${data.clients.find(c => c.name === alert.client)?.id}, '${alert.vin}')">View Schedule</button>
+                    </div>
+                `).join('');
+            }
+        }
     }
 
     // Client Methods
@@ -285,8 +302,12 @@ class MechShopApp {
                             <div class="equipment-info">
                                 <div class="equipment-vin">VIN: ${eq.vin}</div>
                                 <div class="equipment-details">${eq.year} ${eq.make} ${eq.model} - ${eq.type}</div>
+                                ${eq.currentHours ? `<div class="equipment-details">Hours: ${eq.currentHours} | Miles: ${eq.currentMileage || 0}</div>` : ''}
                             </div>
-                            <button class="btn-history" onclick="app.showServiceHistory('${eq.vin}')">Service History</button>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn-history" onclick="app.showServiceHistory('${eq.vin}')">Service History</button>
+                                <button class="btn-edit" onclick="app.showMaintenanceSchedule(${client.id}, '${eq.vin}')">Maintenance</button>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
@@ -331,6 +352,16 @@ class MechShopApp {
                         <option value="Dozer" ${eq.type === 'Dozer' ? 'selected' : ''}>Dozer</option>
                         <option value="Other" ${eq.type === 'Other' ? 'selected' : ''}>Other</option>
                     </select>
+                </div>
+                <div class="form-row">
+                    <div>
+                        <label>Current Hours</label>
+                        <input type="number" class="equipment-hours" value="${eq.currentHours || '0'}">
+                    </div>
+                    <div>
+                        <label>Current Mileage</label>
+                        <input type="number" class="equipment-mileage" value="${eq.currentMileage || '0'}">
+                    </div>
                 </div>
             </div>
         `).join('') || '';
@@ -425,6 +456,16 @@ class MechShopApp {
                     <option value="Other">Other</option>
                 </select>
             </div>
+            <div class="form-row">
+                <div>
+                    <label>Current Hours</label>
+                    <input type="number" class="equipment-hours" value="0">
+                </div>
+                <div>
+                    <label>Current Mileage</label>
+                    <input type="number" class="equipment-mileage" value="0">
+                </div>
+            </div>
         `;
         container.appendChild(equipmentDiv);
     }
@@ -438,7 +479,10 @@ class MechShopApp {
             year: div.querySelector('.equipment-year').value,
             make: div.querySelector('.equipment-make').value,
             model: div.querySelector('.equipment-model').value,
-            type: div.querySelector('.equipment-type').value
+            type: div.querySelector('.equipment-type').value,
+            currentHours: div.querySelector('.equipment-hours')?.value || '0',
+            currentMileage: div.querySelector('.equipment-mileage')?.value || '0',
+            maintenanceSchedule: [] // Initialize empty, can be added later
         }));
 
         const clientData = {
@@ -482,6 +526,216 @@ class MechShopApp {
         this.storage.addActivity(`Deleted client: ${client.name}`);
         this.renderClients();
         this.updateDashboard();
+    }
+
+    showMaintenanceSchedule(clientId, vin) {
+        const data = this.storage.getData();
+        const client = data.clients.find(c => c.id === clientId);
+        const vehicle = client?.equipment?.find(v => v.vin === vin);
+        
+        if (!vehicle) return;
+
+        const modal = document.getElementById('modal');
+        const modalBody = document.getElementById('modalBody');
+
+        const scheduleHtml = vehicle.maintenanceSchedule?.map((item, index) => `
+            <div class="maintenance-item" style="border: 1px solid #ddd; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h4>${item.serviceType}</h4>
+                    <button type="button" class="btn-remove" onclick="app.removeMaintenanceItem(${clientId}, '${vin}', ${index})">Remove</button>
+                </div>
+                <div><strong>Interval:</strong> Every ${item.intervalValue} ${item.intervalType}</div>
+                <div><strong>Last Service:</strong> ${item.lastService || 'Never'}</div>
+                ${item.lastServiceReading ? `<div><strong>Last Reading:</strong> ${item.lastServiceReading} ${item.intervalType}</div>` : ''}
+                <div><strong>Status:</strong> ${this.getMaintenanceStatus(item, vehicle)}</div>
+            </div>
+        `).join('') || '<p>No maintenance schedule set</p>';
+
+        modalBody.innerHTML = `
+            <h2>Maintenance Schedule</h2>
+            <h3>${vehicle.year} ${vehicle.make} ${vehicle.model} (VIN: ${vin})</h3>
+            <div style="margin-bottom: 1rem;">
+                <strong>Current Hours:</strong> ${vehicle.currentHours || 0} | 
+                <strong>Current Mileage:</strong> ${vehicle.currentMileage || 0}
+            </div>
+            <div id="maintenanceList">
+                ${scheduleHtml}
+            </div>
+            <button type="button" class="btn-primary" onclick="app.addMaintenanceItem(${clientId}, '${vin}')">+ Add Maintenance Item</button>
+            <div class="form-actions" style="margin-top: 1rem;">
+                <button type="button" class="btn-secondary" onclick="document.getElementById('modal').classList.remove('active')">Close</button>
+            </div>
+        `;
+
+        modal.classList.add('active');
+    }
+
+    addMaintenanceItem(clientId, vin) {
+        const data = this.storage.getData();
+        const client = data.clients.find(c => c.id === clientId);
+        const vehicle = client?.equipment?.find(v => v.vin === vin);
+        
+        if (!vehicle) return;
+
+        const modal = document.getElementById('modal');
+        const modalBody = document.getElementById('modalBody');
+
+        modalBody.innerHTML = `
+            <h2>Add Maintenance Item</h2>
+            <form id="maintenanceForm">
+                <div class="form-group">
+                    <label for="serviceType">Service Type *</label>
+                    <input type="text" id="serviceType" placeholder="e.g., Oil Change, Brake Inspection" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="intervalValue">Interval Value *</label>
+                        <input type="number" id="intervalValue" placeholder="e.g., 250" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="intervalType">Interval Type *</label>
+                        <select id="intervalType" required>
+                            <option value="hours">Hours</option>
+                            <option value="miles">Miles</option>
+                            <option value="days">Days</option>
+                            <option value="months">Months</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="lastService">Last Service Date</label>
+                        <input type="date" id="lastService">
+                    </div>
+                    <div class="form-group">
+                        <label for="lastServiceReading">Last Service Reading</label>
+                        <input type="number" id="lastServiceReading" placeholder="Hours or Miles at last service">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="app.showMaintenanceSchedule(${clientId}, '${vin}')">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Item</button>
+                </div>
+            </form>
+        `;
+
+        document.getElementById('maintenanceForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            if (!vehicle.maintenanceSchedule) {
+                vehicle.maintenanceSchedule = [];
+            }
+
+            vehicle.maintenanceSchedule.push({
+                serviceType: document.getElementById('serviceType').value,
+                intervalValue: parseInt(document.getElementById('intervalValue').value),
+                intervalType: document.getElementById('intervalType').value,
+                lastService: document.getElementById('lastService').value || null,
+                lastServiceReading: document.getElementById('lastServiceReading').value || null
+            });
+
+            this.storage.saveData(data);
+            this.storage.addActivity(`Added maintenance item: ${document.getElementById('serviceType').value} for VIN ${vin}`);
+            this.showMaintenanceSchedule(clientId, vin);
+        });
+
+        modal.classList.add('active');
+    }
+
+    removeMaintenanceItem(clientId, vin, index) {
+        if (!confirm('Remove this maintenance item?')) return;
+
+        const data = this.storage.getData();
+        const client = data.clients.find(c => c.id === clientId);
+        const vehicle = client?.equipment?.find(v => v.vin === vin);
+        
+        if (vehicle && vehicle.maintenanceSchedule) {
+            vehicle.maintenanceSchedule.splice(index, 1);
+            this.storage.saveData(data);
+            this.showMaintenanceSchedule(clientId, vin);
+        }
+    }
+
+    getMaintenanceStatus(maintenanceItem, vehicle) {
+        const { intervalType, intervalValue, lastService, lastServiceReading } = maintenanceItem;
+        
+        let status = 'Unknown';
+        let daysUntilDue = null;
+        let readingUntilDue = null;
+
+        if (intervalType === 'days' || intervalType === 'months') {
+            if (lastService) {
+                const lastDate = new Date(lastService);
+                const daysToAdd = intervalType === 'months' ? intervalValue * 30 : intervalValue;
+                const dueDate = new Date(lastDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+                const today = new Date();
+                daysUntilDue = Math.ceil((dueDate - today) / (24 * 60 * 60 * 1000));
+                
+                if (daysUntilDue < 0) {
+                    status = `<span style="color: #e74c3c;">OVERDUE by ${Math.abs(daysUntilDue)} days</span>`;
+                } else if (daysUntilDue <= 7) {
+                    status = `<span style="color: #f39c12;">DUE SOON (${daysUntilDue} days)</span>`;
+                } else {
+                    status = `<span style="color: #27ae60;">OK (due in ${daysUntilDue} days)</span>`;
+                }
+            } else {
+                status = '<span style="color: #95a5a6;">Not yet performed</span>';
+            }
+        } else if (intervalType === 'hours' && vehicle.currentHours) {
+            if (lastServiceReading) {
+                const hoursUntilDue = (parseInt(lastServiceReading) + intervalValue) - parseInt(vehicle.currentHours);
+                
+                if (hoursUntilDue <= 0) {
+                    status = `<span style="color: #e74c3c;">OVERDUE by ${Math.abs(hoursUntilDue)} hours</span>`;
+                } else if (hoursUntilDue <= 50) {
+                    status = `<span style="color: #f39c12;">DUE SOON (${hoursUntilDue} hours)</span>`;
+                } else {
+                    status = `<span style="color: #27ae60;">OK (${hoursUntilDue} hours remaining)</span>`;
+                }
+            } else {
+                status = '<span style="color: #95a5a6;">Not yet performed</span>';
+            }
+        } else if (intervalType === 'miles' && vehicle.currentMileage) {
+            if (lastServiceReading) {
+                const milesUntilDue = (parseInt(lastServiceReading) + intervalValue) - parseInt(vehicle.currentMileage);
+                
+                if (milesUntilDue <= 0) {
+                    status = `<span style="color: #e74c3c;">OVERDUE by ${Math.abs(milesUntilDue)} miles</span>`;
+                } else if (milesUntilDue <= 500) {
+                    status = `<span style="color: #f39c12;">DUE SOON (${milesUntilDue} miles)</span>`;
+                } else {
+                    status = `<span style="color: #27ae60;">OK (${milesUntilDue} miles remaining)</span>`;
+                }
+            } else {
+                status = '<span style="color: #95a5a6;">Not yet performed</span>';
+            }
+        }
+
+        return status;
+    }
+
+    getOverdueMaintenanceAlerts() {
+        const data = this.storage.getData();
+        const alerts = [];
+
+        data.clients.forEach(client => {
+            client.equipment?.forEach(vehicle => {
+                vehicle.maintenanceSchedule?.forEach(item => {
+                    const statusHtml = this.getMaintenanceStatus(item, vehicle);
+                    if (statusHtml.includes('OVERDUE') || statusHtml.includes('DUE SOON')) {
+                        alerts.push({
+                            client: client.name,
+                            vehicle: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+                            vin: vehicle.vin,
+                            serviceType: item.serviceType,
+                            status: statusHtml
+                        });
+                    }
+                });
+            });
+        });
+
+        return alerts;
     }
 
     showServiceHistory(vin) {
