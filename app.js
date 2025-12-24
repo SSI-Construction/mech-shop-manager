@@ -9,7 +9,6 @@ class StorageManager {
         if (!localStorage.getItem(this.storageKey)) {
             const initialData = {
                 jobs: [],
-                equipment: [],
                 parts: [],
                 clients: [],
                 invoices: [],
@@ -117,8 +116,6 @@ class MechShopApp {
             this.renderJobs();
         } else if (viewName === 'clients') {
             this.renderClients();
-        } else if (viewName === 'equipment') {
-            this.renderEquipment();
         } else if (viewName === 'parts') {
             this.renderParts();
         } else if (viewName === 'crew') {
@@ -166,7 +163,6 @@ class MechShopApp {
         // Add button listeners
         document.getElementById('addJobBtn').addEventListener('click', () => this.showJobModal());
         document.getElementById('addClientBtn').addEventListener('click', () => this.showClientModal());
-        document.getElementById('addEquipmentBtn').addEventListener('click', () => this.showEquipmentModal());
         document.getElementById('addPartBtn').addEventListener('click', () => this.showPartModal());
         document.getElementById('addCrewBtn').addEventListener('click', () => this.showCrewModal());
         document.getElementById('addInvoiceBtn').addEventListener('click', () => this.showInvoiceModal());
@@ -176,7 +172,6 @@ class MechShopApp {
 
         // Setup search and filters
         this.setupSearch('jobSearch', 'jobStatusFilter', 'jobs');
-        this.setupSearch('equipmentSearch', 'equipmentTypeFilter', 'equipment');
         this.setupSearch('partsSearch', 'partsStockFilter', 'parts');
         this.setupSearch('clientSearch', null, 'clients');
         this.setupSearch('crewSearch', 'crewStatusFilter', 'crew');
@@ -194,7 +189,6 @@ class MechShopApp {
     filterItems(type) {
         const searchId = `${type}Search`;
         const filterId = type === 'jobs' ? 'jobStatusFilter' : 
-                        type === 'equipment' ? 'equipmentTypeFilter' : 
                         type === 'parts' ? 'partsStockFilter' :
                         type === 'crew' ? 'crewStatusFilter' :
                         type === 'invoices' ? 'invoiceStatusFilter' : null;
@@ -204,7 +198,6 @@ class MechShopApp {
 
         if (type === 'jobs') this.renderJobs(searchTerm, filterValue);
         else if (type === 'clients') this.renderClients(searchTerm);
-        else if (type === 'equipment') this.renderEquipment(searchTerm, filterValue);
         else if (type === 'parts') this.renderParts(searchTerm, filterValue);
         else if (type === 'crew') this.renderCrew(searchTerm, filterValue);
         else if (type === 'invoices') this.renderInvoices(searchTerm, filterValue);
@@ -219,7 +212,6 @@ class MechShopApp {
         
         document.getElementById('activeJobsCount').textContent = activeJobs;
         document.getElementById('pendingJobsCount').textContent = pendingJobs;
-        document.getElementById('equipmentCount').textContent = data.equipment.length;
         document.getElementById('partsCount').textContent = data.parts.length;
 
         // Update recent activity
@@ -239,13 +231,14 @@ class MechShopApp {
         const data = this.storage.getData();
         let clients = data.clients;
 
-        // Apply search - search by name, phone, email, or any VIN
+        // Apply search - search by name, phone, or VIN
         if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
             clients = clients.filter(c => 
-                c.name.toLowerCase().includes(searchTerm) ||
-                c.phone.toLowerCase().includes(searchTerm) ||
-                c.email.toLowerCase().includes(searchTerm) ||
-                c.equipment.some(e => e.vin.toLowerCase().includes(searchTerm))
+                c.name.toLowerCase().includes(searchLower) ||
+                c.phone.toLowerCase().includes(searchLower) ||
+                (c.email && c.email.toLowerCase().includes(searchLower)) ||
+                (c.equipment && c.equipment.some(e => e.vin.toLowerCase().includes(searchLower)))
             );
         }
 
@@ -580,50 +573,6 @@ class MechShopApp {
                 </div>
             </div>
         `}).join('');
-    }
-
-    renderEquipment(searchTerm = '', filterValue = 'all') {
-        const data = this.storage.getData();
-        let equipment = data.equipment;
-
-        // Apply filters
-        if (searchTerm) {
-            equipment = equipment.filter(e => 
-                e.name.toLowerCase().includes(searchTerm) ||
-                e.model.toLowerCase().includes(searchTerm) ||
-                e.serialNumber.toLowerCase().includes(searchTerm)
-            );
-        }
-        if (filterValue !== 'all') {
-            equipment = equipment.filter(e => e.type === filterValue);
-        }
-
-        const equipmentList = document.getElementById('equipmentList');
-        
-        if (equipment.length === 0) {
-            equipmentList.innerHTML = '<div class="empty-state"><p>No equipment found. Click "+ Add Equipment" to add one.</p></div>';
-            return;
-        }
-
-        equipmentList.innerHTML = equipment.map(eq => `
-            <div class="item-card">
-                <div class="item-header">
-                    <h3 class="item-title">${eq.name}</h3>
-                    <span class="item-status status-in-progress">${eq.type}</span>
-                </div>
-                <div class="item-details">
-                    <div class="item-detail"><strong>Model:</strong> <span>${eq.model}</span></div>
-                    <div class="item-detail"><strong>Serial #:</strong> <span>${eq.serialNumber}</span></div>
-                    <div class="item-detail"><strong>Year:</strong> <span>${eq.year}</span></div>
-                    <div class="item-detail"><strong>Hours:</strong> <span>${eq.hours}</span></div>
-                    <div class="item-detail"><strong>Last Service:</strong> <span>${eq.lastService}</span></div>
-                </div>
-                <div class="item-actions">
-                    <button class="btn-edit" onclick="app.editEquipment(${eq.id})">Edit</button>
-                    <button class="btn-delete" onclick="app.deleteEquipment(${eq.id})">Delete</button>
-                </div>
-            </div>
-        `).join('');
     }
 
     renderParts(searchTerm = '', filterValue = 'all') {
@@ -1505,109 +1454,6 @@ class MechShopApp {
         this.storage.saveData(data);
         this.storage.addActivity(`Deleted job: ${job.title}`);
         this.renderJobs();
-        this.updateDashboard();
-    }
-
-    // Equipment Methods
-    showEquipmentModal(equipment = null) {
-        const modal = document.getElementById('modal');
-        const modalBody = document.getElementById('modalBody');
-        
-        modalBody.innerHTML = `
-            <h2>${equipment ? 'Edit Equipment' : 'Add Equipment'}</h2>
-            <form id="equipmentForm">
-                <div class="form-group">
-                    <label for="equipmentName">Equipment Name</label>
-                    <input type="text" id="equipmentName" value="${equipment?.name || ''}" required>
-                </div>
-                <div class="form-group">
-                    <label for="equipmentType">Type</label>
-                    <select id="equipmentType" required>
-                        <option value="excavator" ${equipment?.type === 'excavator' ? 'selected' : ''}>Excavator</option>
-                        <option value="loader" ${equipment?.type === 'loader' ? 'selected' : ''}>Loader</option>
-                        <option value="dozer" ${equipment?.type === 'dozer' ? 'selected' : ''}>Dozer</option>
-                        <option value="dump-truck" ${equipment?.type === 'dump-truck' ? 'selected' : ''}>Dump Truck</option>
-                        <option value="other" ${equipment?.type === 'other' ? 'selected' : ''}>Other</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="equipmentModel">Model</label>
-                    <input type="text" id="equipmentModel" value="${equipment?.model || ''}" required>
-                </div>
-                <div class="form-group">
-                    <label for="equipmentSerial">Serial Number</label>
-                    <input type="text" id="equipmentSerial" value="${equipment?.serialNumber || ''}" required>
-                </div>
-                <div class="form-group">
-                    <label for="equipmentYear">Year</label>
-                    <input type="number" id="equipmentYear" value="${equipment?.year || ''}" required>
-                </div>
-                <div class="form-group">
-                    <label for="equipmentHours">Operating Hours</label>
-                    <input type="number" id="equipmentHours" value="${equipment?.hours || ''}" required>
-                </div>
-                <div class="form-group">
-                    <label for="equipmentLastService">Last Service Date</label>
-                    <input type="date" id="equipmentLastService" value="${equipment?.lastService || ''}" required>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="document.getElementById('modal').classList.remove('active')">Cancel</button>
-                    <button type="submit" class="btn-primary">${equipment ? 'Update' : 'Add'}</button>
-                </div>
-            </form>
-        `;
-
-        document.getElementById('equipmentForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveEquipment(equipment?.id);
-        });
-
-        modal.classList.add('active');
-    }
-
-    saveEquipment(id = null) {
-        const data = this.storage.getData();
-        const equipmentData = {
-            id: id || Date.now(),
-            name: document.getElementById('equipmentName').value,
-            type: document.getElementById('equipmentType').value,
-            model: document.getElementById('equipmentModel').value,
-            serialNumber: document.getElementById('equipmentSerial').value,
-            year: document.getElementById('equipmentYear').value,
-            hours: document.getElementById('equipmentHours').value,
-            lastService: document.getElementById('equipmentLastService').value
-        };
-
-        if (id) {
-            const index = data.equipment.findIndex(e => e.id === id);
-            data.equipment[index] = equipmentData;
-            this.storage.addActivity(`Updated equipment: ${equipmentData.name}`);
-        } else {
-            data.equipment.push(equipmentData);
-            this.storage.addActivity(`Added new equipment: ${equipmentData.name}`);
-        }
-
-        this.storage.saveData(data);
-        document.getElementById('modal').classList.remove('active');
-        this.renderEquipment();
-        this.updateDashboard();
-    }
-
-    editEquipment(id) {
-        const data = this.storage.getData();
-        const equipment = data.equipment.find(e => e.id === id);
-        this.showEquipmentModal(equipment);
-    }
-
-    deleteEquipment(id) {
-        if (!confirm('Are you sure you want to delete this equipment?')) return;
-        
-        const data = this.storage.getData();
-        const equipment = data.equipment.find(e => e.id === id);
-        data.equipment = data.equipment.filter(e => e.id !== id);
-        this.storage.saveData(data);
-        this.storage.addActivity(`Deleted equipment: ${equipment.name}`);
-        this.renderEquipment();
         this.updateDashboard();
     }
 

@@ -22,7 +22,6 @@
         <button class="nav-btn active" data-view="dashboard">Dashboard</button>
         <button class="nav-btn" data-view="jobs">Jobs</button>
         <button class="nav-btn" data-view="clients">Clients</button>
-        <button class="nav-btn" data-view="equipment">Equipment</button>
         <button class="nav-btn" data-view="parts">Parts</button>
         <button class="nav-btn" data-view="crew">Crew</button>
         <button class="nav-btn" data-view="invoices">Invoices</button>
@@ -40,10 +39,6 @@
                 <div class="stat-card">
                     <h3>Pending Jobs</h3>
                     <p class="stat-number" id="pendingJobsCount">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Equipment Units</h3>
-                    <p class="stat-number" id="equipmentCount">0</p>
                 </div>
                 <div class="stat-card">
                     <h3>Parts in Stock</h3>
@@ -215,26 +210,6 @@
                 </select>
             </div>
             <div id="jobsList" class="items-list"></div>
-        </section>
-
-        <!-- Equipment View -->
-        <section id="equipment" class="view">
-            <div class="view-header">
-                <h2>Equipment</h2>
-                <button class="btn-primary" id="addEquipmentBtn">+ Add Equipment</button>
-            </div>
-            <div class="search-filter">
-                <input type="text" id="equipmentSearch" placeholder="Search equipment..." class="search-input">
-                <select id="equipmentTypeFilter" class="filter-select">
-                    <option value="all">All Types</option>
-                    <option value="excavator">Excavator</option>
-                    <option value="loader">Loader</option>
-                    <option value="dozer">Dozer</option>
-                    <option value="dump-truck">Dump Truck</option>
-                    <option value="other">Other</option>
-                </select>
-            </div>
-            <div id="equipmentList" class="items-list"></div>
         </section>
 
         <!-- Parts View -->
