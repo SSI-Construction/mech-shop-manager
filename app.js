@@ -300,6 +300,7 @@ class MechShopApp {
                     ${client.equipment.map(eq => `
                         <div class="equipment-item">
                             <div class="equipment-info">
+                                ${eq.unitNumber ? `<div class="equipment-vin">Unit #: ${eq.unitNumber}</div>` : ''}
                                 <div class="equipment-vin">VIN: ${eq.vin}</div>
                                 <div class="equipment-details">${eq.year} ${eq.make} ${eq.model} - ${eq.type}</div>
                                 ${eq.currentHours ? `<div class="equipment-details">Hours: ${eq.currentHours} | Miles: ${eq.currentMileage || 0}</div>` : ''}
@@ -325,33 +326,39 @@ class MechShopApp {
                 <h4>Unit ${index + 1} <button type="button" class="btn-remove" onclick="this.parentElement.parentElement.remove()">Remove</button></h4>
                 <div class="form-row">
                     <div>
-                        <label>VIN</label>
-                        <input type="text" class="equipment-vin" value="${eq.vin}" required>
+                        <label>Unit Number *</label>
+                        <input type="text" class="equipment-unit-number" value="${eq.unitNumber || ''}" required>
                     </div>
                     <div>
-                        <label>Year</label>
-                        <input type="number" class="equipment-year" value="${eq.year}" required>
+                        <label>VIN</label>
+                        <input type="text" class="equipment-vin" value="${eq.vin}" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div>
+                        <label>Year</label>
+                        <input type="number" class="equipment-year" value="${eq.year}" required>
+                    </div>
+                    <div>
                         <label>Make</label>
                         <input type="text" class="equipment-make" value="${eq.make}" required>
                     </div>
+                </div>
+                <div class="form-row">
                     <div>
                         <label>Model</label>
                         <input type="text" class="equipment-model" value="${eq.model}" required>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Type</label>
-                    <select class="equipment-type" required>
-                        <option value="Truck" ${eq.type === 'Truck' ? 'selected' : ''}>Truck</option>
-                        <option value="Excavator" ${eq.type === 'Excavator' ? 'selected' : ''}>Excavator</option>
-                        <option value="Loader" ${eq.type === 'Loader' ? 'selected' : ''}>Loader</option>
-                        <option value="Dozer" ${eq.type === 'Dozer' ? 'selected' : ''}>Dozer</option>
-                        <option value="Other" ${eq.type === 'Other' ? 'selected' : ''}>Other</option>
-                    </select>
+                    <div>
+                        <label>Type</label>
+                        <select class="equipment-type" required>
+                            <option value="Truck" ${eq.type === 'Truck' ? 'selected' : ''}>Truck</option>
+                            <option value="Excavator" ${eq.type === 'Excavator' ? 'selected' : ''}>Excavator</option>
+                            <option value="Loader" ${eq.type === 'Loader' ? 'selected' : ''}>Loader</option>
+                            <option value="Dozer" ${eq.type === 'Dozer' ? 'selected' : ''}>Dozer</option>
+                            <option value="Other" ${eq.type === 'Other' ? 'selected' : ''}>Other</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div>
@@ -428,33 +435,39 @@ class MechShopApp {
             <h4>Unit ${count} <button type="button" class="btn-remove" onclick="this.parentElement.parentElement.remove()">Remove</button></h4>
             <div class="form-row">
                 <div>
-                    <label>VIN</label>
-                    <input type="text" class="equipment-vin" required>
+                    <label>Unit Number *</label>
+                    <input type="text" class="equipment-unit-number" required>
                 </div>
                 <div>
-                    <label>Year</label>
-                    <input type="number" class="equipment-year" required>
+                    <label>VIN</label>
+                    <input type="text" class="equipment-vin" required>
                 </div>
             </div>
             <div class="form-row">
                 <div>
+                    <label>Year</label>
+                    <input type="number" class="equipment-year" required>
+                </div>
+                <div>
                     <label>Make</label>
                     <input type="text" class="equipment-make" required>
                 </div>
+            </div>
+            <div class="form-row">
                 <div>
                     <label>Model</label>
                     <input type="text" class="equipment-model" required>
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Type</label>
-                <select class="equipment-type" required>
+                <div>
+                    <label>Type</label>
+                    <select class="equipment-type" required>
                     <option value="Truck">Truck</option>
                     <option value="Excavator">Excavator</option>
                     <option value="Loader">Loader</option>
                     <option value="Dozer">Dozer</option>
                     <option value="Other">Other</option>
-                </select>
+                    </select>
+                </div>
             </div>
             <div class="form-row">
                 <div>
@@ -475,6 +488,7 @@ class MechShopApp {
         
         // Collect equipment data
         const equipmentItems = Array.from(document.querySelectorAll('#equipmentContainer > div')).map(div => ({
+            unitNumber: div.querySelector('.equipment-unit-number').value,
             vin: div.querySelector('.equipment-vin').value,
             year: div.querySelector('.equipment-year').value,
             make: div.querySelector('.equipment-make').value,
