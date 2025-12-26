@@ -1104,10 +1104,61 @@ class MechShopApp {
             this.saveInvoice(invoice?.id);
         });
 
+        // Add expandable textarea functionality for line items
+        this.setupExpandableTextareas();
+
         modal.classList.add('active');
         
         // Calculate initial total
         setTimeout(() => this.calculateInvoiceTotal(), 100);
+    }
+
+    setupExpandableTextareas() {
+        const modal = document.getElementById('modal');
+        
+        // Handle line item description and notes fields
+        modal.addEventListener('focus', (e) => {
+            if (e.target.classList.contains('item-description') || e.target.classList.contains('item-notes')) {
+                e.target.classList.add('expanded-field');
+                e.target.style.position = 'absolute';
+                e.target.style.zIndex = '1000';
+                e.target.style.width = '400px';
+                e.target.style.minHeight = '100px';
+                e.target.style.padding = '0.5rem';
+                e.target.style.backgroundColor = 'white';
+                e.target.style.border = '2px solid #007bff';
+                e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                e.target.style.borderRadius = '4px';
+            }
+        }, true);
+        
+        modal.addEventListener('blur', (e) => {
+            if (e.target.classList.contains('item-description') || e.target.classList.contains('item-notes')) {
+                e.target.classList.remove('expanded-field');
+                e.target.style.position = '';
+                e.target.style.zIndex = '';
+                e.target.style.width = '';
+                e.target.style.minHeight = '';
+                e.target.style.padding = '';
+                e.target.style.backgroundColor = '';
+                e.target.style.border = '';
+                e.target.style.boxShadow = '';
+                e.target.style.borderRadius = '';
+            }
+        }, true);
+
+        // Handle invoice notes field
+        const invoiceNotes = document.getElementById('invoiceNotes');
+        if (invoiceNotes) {
+            invoiceNotes.addEventListener('focus', function() {
+                this.style.minHeight = '150px';
+                this.style.transition = 'min-height 0.2s ease';
+            });
+            
+            invoiceNotes.addEventListener('blur', function() {
+                this.style.minHeight = '60px';
+            });
+        }
     }
 
     updateInvoiceVinDropdown() {
