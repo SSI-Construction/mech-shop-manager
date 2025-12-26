@@ -353,6 +353,7 @@ class MechShopApp {
                         <label>Type</label>
                         <select class="equipment-type">
                             <option value="Truck" ${eq.type === 'Truck' ? 'selected' : ''}>Truck</option>
+                            <option value="Trailer" ${eq.type === 'Trailer' ? 'selected' : ''}>Trailer</option>
                             <option value="Excavator" ${eq.type === 'Excavator' ? 'selected' : ''}>Excavator</option>
                             <option value="Loader" ${eq.type === 'Loader' ? 'selected' : ''}>Loader</option>
                             <option value="Dozer" ${eq.type === 'Dozer' ? 'selected' : ''}>Dozer</option>
@@ -466,6 +467,7 @@ class MechShopApp {
                     <label>Type</label>
                     <select class="equipment-type">
                     <option value="Truck">Truck</option>
+                    <option value="Trailer">Trailer</option>
                     <option value="Excavator">Excavator</option>
                     <option value="Loader">Loader</option>
                     <option value="Dozer">Dozer</option>
