@@ -331,27 +331,27 @@ class MechShopApp {
                     </div>
                     <div>
                         <label>VIN</label>
-                        <input type="text" class="equipment-vin" value="${eq.vin}" required>
+                        <input type="text" class="equipment-vin" value="${eq.vin}">
                     </div>
                 </div>
                 <div class="form-row">
                     <div>
                         <label>Year</label>
-                        <input type="number" class="equipment-year" value="${eq.year}" required>
+                        <input type="number" class="equipment-year" value="${eq.year}">
                     </div>
                     <div>
                         <label>Make</label>
-                        <input type="text" class="equipment-make" value="${eq.make}" required>
+                        <input type="text" class="equipment-make" value="${eq.make}">
                     </div>
                 </div>
                 <div class="form-row">
                     <div>
                         <label>Model</label>
-                        <input type="text" class="equipment-model" value="${eq.model}" required>
+                        <input type="text" class="equipment-model" value="${eq.model}">
                     </div>
                     <div>
                         <label>Type</label>
-                        <select class="equipment-type" required>
+                        <select class="equipment-type">
                             <option value="Truck" ${eq.type === 'Truck' ? 'selected' : ''}>Truck</option>
                             <option value="Excavator" ${eq.type === 'Excavator' ? 'selected' : ''}>Excavator</option>
                             <option value="Loader" ${eq.type === 'Loader' ? 'selected' : ''}>Loader</option>
@@ -440,27 +440,27 @@ class MechShopApp {
                 </div>
                 <div>
                     <label>VIN</label>
-                    <input type="text" class="equipment-vin" required>
+                    <input type="text" class="equipment-vin">
                 </div>
             </div>
             <div class="form-row">
                 <div>
                     <label>Year</label>
-                    <input type="number" class="equipment-year" required>
+                    <input type="number" class="equipment-year">
                 </div>
                 <div>
                     <label>Make</label>
-                    <input type="text" class="equipment-make" required>
+                    <input type="text" class="equipment-make">
                 </div>
             </div>
             <div class="form-row">
                 <div>
                     <label>Model</label>
-                    <input type="text" class="equipment-model" required>
+                    <input type="text" class="equipment-model">
                 </div>
                 <div>
                     <label>Type</label>
-                    <select class="equipment-type" required>
+                    <select class="equipment-type">
                     <option value="Truck">Truck</option>
                     <option value="Excavator">Excavator</option>
                     <option value="Loader">Loader</option>
