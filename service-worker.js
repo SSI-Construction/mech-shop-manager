@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mech-shop-v1';
+const CACHE_NAME = 'mech-shop-v3-20251225';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -11,6 +11,7 @@ const urlsToCache = [
 
 // Install service worker and cache resources
 self.addEventListener('install', event => {
+  self.skipWaiting(); // Force the waiting service worker to become the active service worker
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -68,6 +69,6 @@ self.addEventListener('activate', event => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // Take control of all clients immediately
   );
 });

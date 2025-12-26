@@ -264,13 +264,16 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=20251226"></script>
     <script>
+        // Temporarily disabled service worker for cache testing
+        /*
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/service-worker.js')
                 .then(reg => console.log('Service Worker registered', reg))
                 .catch(err => console.log('Service Worker registration failed', err));
         }
+        */
     </script>
 </body>
 </html>

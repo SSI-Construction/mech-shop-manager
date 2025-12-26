@@ -408,7 +408,7 @@ class MechShopApp {
                     <div id="equipmentContainer">
                         ${equipmentHtml}
                     </div>
-                    <button type="button" class="btn-add-line" onclick="app.addEquipmentToClient()">+ Add Equipment</button>
+                    <button type="button" class="btn-add-line" id="addEquipmentBtn">+ Add Equipment</button>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="document.getElementById('modal').classList.remove('active')">Cancel</button>
@@ -416,6 +416,10 @@ class MechShopApp {
                 </div>
             </form>
         `;
+
+        document.getElementById('addEquipmentBtn').addEventListener('click', () => {
+            this.addEquipmentToClient();
+        });
 
         document.getElementById('clientForm').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -901,7 +905,6 @@ class MechShopApp {
     renderAllViews() {
         this.renderJobs();
         this.renderClients();
-        this.renderEquipment();
         this.renderParts();
         this.renderInvoices();
     }
